@@ -137,53 +137,56 @@ h1 {
 
 .controls {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .controls-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
 .controls-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(170px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(4, minmax(158px, 1fr));
+  gap: 4px;
 }
 
 .controls section {
   border: 1px solid #24415f;
   border-radius: 8px;
-  padding: 7px;
+  padding: 5px 6px;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 8px;
+  grid-template-columns: 1fr;
+  gap: 4px;
   align-content: start;
 }
 
 .controls h3 {
   grid-column: 1 / -1;
-  margin: 0 0 2px;
+  margin: 0 0 1px;
   color: var(--accent);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 label {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+  gap: 5px;
   align-items: center;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.71rem;
   min-width: 0;
+  white-space: nowrap;
+  line-height: 1.05;
 }
 
 input[type="range"] {
   width: 100%;
-  min-width: 92px;
+  min-width: 84px;
+  height: 14px;
 }
 
 input,
@@ -194,13 +197,13 @@ button {
 
 input[type="number"],
 select {
-  width: 76px;
+  width: 68px;
   background: #0c1a2d;
   color: var(--ink);
   border: 1px solid #2b4a67;
   border-radius: 6px;
-  padding: 3px 5px;
-  font-size: 0.75rem;
+  padding: 2px 4px;
+  font-size: 0.7rem;
 }
 
 label input[type="checkbox"] {
@@ -210,6 +213,7 @@ label input[type="checkbox"] {
 .check-row {
   grid-column: 1 / -1;
   grid-template-columns: auto 1fr;
+  white-space: nowrap;
 }
 
 .controls section .btn {
@@ -218,8 +222,8 @@ label input[type="checkbox"] {
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 6px;
 }
 
 .btn {
@@ -227,9 +231,10 @@ label input[type="checkbox"] {
   border: 1px solid #2e5778;
   background: #183352;
   color: var(--ink);
-  padding: 6px 8px;
+  padding: 4px 7px;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  line-height: 1.1;
 }
 
 .btn.primary {
@@ -330,5 +335,9 @@ canvas {
   .controls-bar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .actions {
+    flex-wrap: wrap;
   }
 }
