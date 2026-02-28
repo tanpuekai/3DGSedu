@@ -67,6 +67,7 @@
                 <option value="skeleton">Skeleton Torso</option>
                 <option value="spine">Spine Focus</option>
                 <option value="upper">Upper Body</option>
+                <option value="single_demo">Single Gaussian (Non-medical Demo)</option>
               </select>
             </label>
             <button id="regenBtn" class="btn ghost">Regen Gaussians</button>
@@ -74,18 +75,28 @@
 
           <section>
             <h3>Camera Pose</h3>
-            <label>X <input id="camX" type="number" step="0.1" value="0" /></label>
-            <label>Y <input id="camY" type="number" step="0.1" value="0.4" /></label>
-            <label>Z <input id="camZ" type="number" step="0.1" value="4.8" /></label>
-            <label>Yaw (deg) <input id="camYaw" type="number" step="1" value="180" /></label>
-            <label>Pitch (deg) <input id="camPitch" type="number" step="1" value="-7" /></label>
+            <div class="camera-layout">
+              <div class="camera-inputs">
+                <label>X <input id="camX" type="number" step="0.1" value="0" /></label>
+                <label>Y <input id="camY" type="number" step="0.1" value="0.4" /></label>
+                <label>Z <input id="camZ" type="number" step="0.1" value="4.8" /></label>
+                <label>Yaw (deg) <input id="camYaw" type="number" step="1" value="180" /></label>
+                <label>Pitch (deg) <input id="camPitch" type="number" step="1" value="-7" /></label>
+              </div>
+              <div class="dpad-wrap" aria-label="Yaw and pitch controls">
+                <button id="pitchUpBtn" class="dpad-btn up" type="button" aria-label="Pitch up">▲</button>
+                <button id="yawLeftBtn" class="dpad-btn left" type="button" aria-label="Yaw left">◀</button>
+                <button id="yawRightBtn" class="dpad-btn right" type="button" aria-label="Yaw right">▶</button>
+                <button id="pitchDownBtn" class="dpad-btn down" type="button" aria-label="Pitch down">▼</button>
+              </div>
+            </div>
           </section>
 
           <section>
             <h3>Lens & Frustum</h3>
             <label>FOV (deg)
-              <input id="fov" type="range" min="20" max="100" step="1" value="55" />
-              <span id="fovLabel">55</span>
+              <input id="fov" type="range" min="1" max="100" step="1" value="20" />
+              <span id="fovLabel">20</span>
             </label>
             <label>Near plane
               <input id="near" type="range" min="0.1" max="3" step="0.1" value="0.5" />

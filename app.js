@@ -13,6 +13,10 @@ const controls = {
   camZ: document.getElementById("camZ"),
   camYaw: document.getElementById("camYaw"),
   camPitch: document.getElementById("camPitch"),
+  yawLeftBtn: document.getElementById("yawLeftBtn"),
+  yawRightBtn: document.getElementById("yawRightBtn"),
+  pitchUpBtn: document.getElementById("pitchUpBtn"),
+  pitchDownBtn: document.getElementById("pitchDownBtn"),
   fov: document.getElementById("fov"),
   fovLabel: document.getElementById("fovLabel"),
   near: document.getElementById("near"),
@@ -182,6 +186,16 @@ function rand(seedObj) {
 }
 
 function generateSkeletonGaussians(count, preset) {
+  if (preset === "single_demo") {
+    return [{
+      position: vec(0, 0.2, 0),
+      color: [255, 190, 132],
+      alpha: 0.5,
+      radius: 1.5,
+      type: "single_demo",
+    }];
+  }
+
   const seedObj = { seed: 123456789 };
   const points = [];
 
@@ -382,6 +396,14 @@ function drawFrustum(ctx, obsCam, inferCam, width, height, fovDeg, near, far) {
   ctx.restore();
 }
 
+function projectedRadiusPx(radius, pointScale, focal, depth, width, height) {
+  // Pinhole projection: image size is proportional to focal/depth.
+  // Keep only a very high safety cap to avoid pathological overdraw.
+  const raw = (radius * pointScale * focal) / Math.max(depth, 1e-5);
+  const safetyMax = Math.hypot(width, height) * 4;
+  return clamp(raw, 0.3, safetyMax);
+}
+
 function drawSceneExplorer() {
   const w = sceneCanvas.width;
   const h = sceneCanvas.height;
@@ -394,6 +416,7 @@ function drawSceneExplorer() {
   const near = parseFloat(controls.near.value);
   const far = parseFloat(controls.far.value);
   const pointScale = parseFloat(controls.pointScale.value);
+  const obsFocal = h * 0.5 / Math.tan((55 * Math.PI) / 360);
 
   drawAxes(sceneCtx, obsCam, w, h);
 
@@ -418,7 +441,7 @@ function drawSceneExplorer() {
   projected.sort((a, b) => b.depth - a.depth);
 
   for (const p of projected) {
-    const rad = clamp((p.g.radius * pointScale * 42) / p.depth, 0.3, 5.5);
+    const rad = projectedRadiusPx(p.g.radius, pointScale, obsFocal, p.depth, w, h);
     const [r, g, b] = p.g.color;
     const alpha = p.isVisible ? 0.8 : 0.14;
 
@@ -460,13 +483,15 @@ function renderInferenceFrame() {
 
   const inferCam = cameraFromPose();
   const splats = [];
+  const preset = controls.scenePreset.value;
+  const isSingleDemo = preset === "single_demo";
 
   for (const gaussian of state.gaussians) {
     const p = projectPoint(gaussian.position, inferCam, w, h, fov);
     if (!p) continue;
     if (p.depth < near || p.depth > far) continue;
 
-    const screenR = clamp((gaussian.radius * pointScale * p.focal) / p.depth, 0.8, 38);
+    const screenR = projectedRadiusPx(gaussian.radius, pointScale, p.focal, p.depth, w, h);
     if (p.sx < -screenR || p.sx > w + screenR || p.sy < -screenR || p.sy > h + screenR) continue;
 
     splats.push({ ...p, gaussian, screenR });
@@ -474,23 +499,95 @@ function renderInferenceFrame() {
 
   splats.sort((a, b) => b.depth - a.depth);
 
-  for (const s of splats) {
+  function drawEggSplat(s) {
     const [r, g, b] = s.gaussian.color;
-    const localAlpha = clamp(s.gaussian.alpha * alphaGain * (0.8 + 0.4 / (1 + s.depth * 0.07)), 0.01, 0.65);
+    const hr = Math.min(255, r + 10);
+    const hg = Math.min(255, g + 10);
+    const hb = Math.min(255, b + 10);
+    const baseAlpha = clamp(s.gaussian.alpha * alphaGain * (0.86 + 0.4 / (1 + s.depth * 0.09)), 0.04, 0.8);
+    const eggAsym = 0.33;
+    const eggYScale = 0.9;
+    // Use screen-space offset from image center to avoid sign/axis flips.
+    const dirX = s.sx - w * 0.5;
+    const dirY = s.sy - h * 0.5;
+    const dirMag = Math.hypot(dirX, dirY);
+    const dirAngle = dirMag > 1e-5 ? Math.atan2(dirY, dirX) : 0;
+    const maxSquash = 0.18;
+    const squash = clamp((dirMag / Math.max(Math.min(w, h), 1)) * 0.22, 0, maxSquash);
 
-    const grad = renderCtx.createRadialGradient(s.sx, s.sy, 0, s.sx, s.sy, s.screenR);
-    grad.addColorStop(0, `rgba(${r},${g},${b},${localAlpha})`);
-    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    function traceEggPath(scale = 1) {
+      const n = 96;
+      for (let i = 0; i <= n; i += 1) {
+        const t = (i / n) * Math.PI * 2;
+        const c = Math.cos(t);
+        const si = Math.sin(t);
+        // True non-elliptical egg: one end narrower, one end fuller.
+        const rx = (1 + eggAsym * c) * scale;
+        const x = c * rx;
+        const y = si * eggYScale * scale;
+        if (i === 0) renderCtx.moveTo(x, y);
+        else renderCtx.lineTo(x, y);
+      }
+      renderCtx.closePath();
+    }
 
-    renderCtx.fillStyle = grad;
+    renderCtx.save();
+    renderCtx.translate(s.sx, s.sy);
+    renderCtx.rotate(dirAngle);
+    const stretchX = 1 + squash;
+    const stretchY = 1 - squash * 0.6;
+    const unitMaxExtent = Math.max((1 + eggAsym) * stretchX, eggYScale * stretchY);
+    const contourScale = s.screenR / Math.max(unitMaxExtent, 1e-5);
+    renderCtx.scale(contourScale * stretchX, contourScale * stretchY);
+
+    const shell = renderCtx.createLinearGradient(-1.2, 0, 1.2, 0);
+    shell.addColorStop(0.0, `rgba(${r},${g},${b},${baseAlpha * 0.15})`);
+    shell.addColorStop(0.35, `rgba(${r},${g},${b},${baseAlpha * 0.42})`);
+    shell.addColorStop(1.0, `rgba(${r},${g},${b},${baseAlpha * 0.75})`);
+    renderCtx.fillStyle = shell;
     renderCtx.beginPath();
-    renderCtx.arc(s.sx, s.sy, s.screenR, 0, Math.PI * 2);
+    traceEggPath(1.0);
     renderCtx.fill();
+
+    const core = renderCtx.createRadialGradient(0.38, -0.02, 0.02, 0.38, -0.02, 0.72);
+    core.addColorStop(0.0, `rgba(${hr},${hg},${hb},${baseAlpha * 0.6})`);
+    core.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
+    renderCtx.fillStyle = core;
+    renderCtx.beginPath();
+    traceEggPath(0.74);
+    renderCtx.fill();
+
+    renderCtx.strokeStyle = `rgba(${r},${g},${b},${baseAlpha * 0.46})`;
+    renderCtx.lineWidth = 0.03;
+    renderCtx.beginPath();
+    traceEggPath(1.0);
+    renderCtx.stroke();
+
+    renderCtx.restore();
+  }
+
+  for (const s of splats) {
+    if (s.gaussian.type === "single_demo") {
+      drawEggSplat(s);
+    } else {
+      const [r, g, b] = s.gaussian.color;
+      const localAlpha = clamp(s.gaussian.alpha * alphaGain * (0.8 + 0.4 / (1 + s.depth * 0.07)), 0.01, 0.65);
+
+      const grad = renderCtx.createRadialGradient(s.sx, s.sy, 0, s.sx, s.sy, s.screenR);
+      grad.addColorStop(0, `rgba(${r},${g},${b},${localAlpha})`);
+      grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+
+      renderCtx.fillStyle = grad;
+      renderCtx.beginPath();
+      renderCtx.arc(s.sx, s.sy, s.screenR, 0, Math.PI * 2);
+      renderCtx.fill();
+    }
   }
 
   renderCtx.fillStyle = "rgba(255,255,255,0.8)";
   renderCtx.font = "12px sans-serif";
-  renderCtx.fillText(`FOV ${fov}deg | Near ${near.toFixed(1)} | Far ${far.toFixed(1)} | Splats ${splats.length}`, 12, 20);
+  const modeTag = controls.scenePreset.value === "single_demo" ? " | Mode: Egg-like Single Gaussian Demo" : "";
+  renderCtx.fillText(`FOV ${fov}deg | Near ${near.toFixed(1)} | Far ${far.toFixed(1)} | Splats ${splats.length}${modeTag}`, 12, 20);
 
   state.renderedCount = splats.length;
 }
@@ -501,6 +598,52 @@ function regenerateGaussians() {
   state.gaussians = generateSkeletonGaussians(count, preset);
   state.renderedCount = 0;
   requestInferenceRender();
+}
+
+function nudgeCameraAngles(deltaYaw, deltaPitch) {
+  const nextYaw = parseFloat(controls.camYaw.value) + deltaYaw;
+  const nextPitch = clamp(parseFloat(controls.camPitch.value) + deltaPitch, -89, 89);
+  controls.camYaw.value = `${nextYaw}`;
+  controls.camPitch.value = `${nextPitch}`;
+  requestInferenceRender();
+}
+
+function bindNudgeButton(button, deltaYaw, deltaPitch) {
+  if (!button) return;
+  let repeatTimer = null;
+  let holdTimer = null;
+
+  const start = () => {
+    nudgeCameraAngles(deltaYaw, deltaPitch);
+    holdTimer = setTimeout(() => {
+      repeatTimer = setInterval(() => {
+        nudgeCameraAngles(deltaYaw, deltaPitch);
+      }, 45);
+    }, 220);
+  };
+
+  const stop = () => {
+    if (holdTimer) clearTimeout(holdTimer);
+    if (repeatTimer) clearInterval(repeatTimer);
+    holdTimer = null;
+    repeatTimer = null;
+  };
+
+  button.addEventListener("mousedown", start);
+  button.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    start();
+  }, { passive: false });
+  window.addEventListener("mouseup", stop);
+  window.addEventListener("touchend", stop);
+  button.addEventListener("mouseleave", stop);
+}
+
+function flashDpad(button) {
+  if (!button) return;
+  button.classList.remove("flash");
+  void button.offsetWidth;
+  button.classList.add("flash");
 }
 
 function bindEvents() {
@@ -559,12 +702,32 @@ function bindEvents() {
   controls.showFrustum.addEventListener("change", requestInferenceRender);
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") controls.camYaw.value = `${parseFloat(controls.camYaw.value) - 2}`;
-    if (e.key === "ArrowRight") controls.camYaw.value = `${parseFloat(controls.camYaw.value) + 2}`;
-    if (e.key === "ArrowUp") controls.camPitch.value = `${parseFloat(controls.camPitch.value) + 2}`;
-    if (e.key === "ArrowDown") controls.camPitch.value = `${parseFloat(controls.camPitch.value) - 2}`;
-    if (e.key.startsWith("Arrow")) requestInferenceRender();
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      flashDpad(controls.yawLeftBtn);
+      nudgeCameraAngles(-2, 0);
+    }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      flashDpad(controls.yawRightBtn);
+      nudgeCameraAngles(2, 0);
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      flashDpad(controls.pitchUpBtn);
+      nudgeCameraAngles(0, 2);
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      flashDpad(controls.pitchDownBtn);
+      nudgeCameraAngles(0, -2);
+    }
   });
+
+  bindNudgeButton(controls.yawLeftBtn, -2, 0);
+  bindNudgeButton(controls.yawRightBtn, 2, 0);
+  bindNudgeButton(controls.pitchUpBtn, 0, 2);
+  bindNudgeButton(controls.pitchDownBtn, 0, -2);
 
   sceneCanvas.addEventListener("mousedown", (e) => {
     state.observer.dragging = true;

@@ -220,6 +220,90 @@ label input[type="checkbox"] {
   grid-column: 1 / -1;
 }
 
+.camera-layout {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.camera-inputs {
+  display: grid;
+  gap: 4px;
+}
+
+.dpad-wrap {
+  display: grid;
+  grid-template-columns: 28px 28px 28px;
+  grid-template-rows: 28px 28px;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.dpad-btn {
+  border: 1px solid #2e5778;
+  background: #122d49;
+  color: var(--ink);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 90ms ease, filter 120ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.dpad-btn:hover {
+  filter: brightness(1.08);
+}
+
+.dpad-btn:active {
+  transform: translateY(1px);
+}
+
+.dpad-btn.flash {
+  animation: dpadFlash 210ms ease-out;
+}
+
+@keyframes dpadFlash {
+  0% {
+    background: #1b446f;
+    box-shadow: 0 0 0 0 rgba(77, 215, 255, 0.85);
+    transform: scale(1);
+  }
+  45% {
+    background: #2f6da5;
+    box-shadow: 0 0 0 6px rgba(77, 215, 255, 0.22);
+    transform: scale(1.08);
+  }
+  100% {
+    background: #122d49;
+    box-shadow: 0 0 0 0 rgba(77, 215, 255, 0);
+    transform: scale(1);
+  }
+}
+
+.dpad-btn.up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-btn.left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-btn.right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-btn.down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
 .actions {
   display: flex;
   flex-wrap: nowrap;
@@ -330,6 +414,11 @@ canvas {
 
   .controls section {
     grid-template-columns: 1fr;
+  }
+
+  .camera-layout {
+    grid-template-columns: 1fr;
+    justify-items: start;
   }
 
   .controls-bar {
