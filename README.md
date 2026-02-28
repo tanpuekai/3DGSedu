@@ -5,6 +5,10 @@ This project is a small web app for **medical scene education** that helps you u
 It does **not** show model training.
 It shows what happens **after training**, when many Gaussian points are already fitted to a scene and you render from different camera settings.
 
+## Try it out
+
+Click this link: https://htmlpreview.github.io/?https://github.com/tanpuekai/3DGSedu/blob/main/index.html
+
 ## Who this is for
 
 Students, educators, and beginners exploring 3DGS in medical-style scenes.
