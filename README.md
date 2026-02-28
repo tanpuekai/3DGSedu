@@ -9,6 +9,10 @@ It shows what happens **after training**, when many Gaussian points are already 
 
 Click this link: https://htmlpreview.github.io/?https://github.com/tanpuekai/3DGSedu/blob/main/index.html
 
+## Screenshot
+
+![3DGS Medical Education Playground](./Screenshot%202026-02-28%20at%2012.30.20%E2%80%AFPM.png)
+
 ## Who this is for
 
 Students, educators, and beginners exploring 3DGS in medical-style scenes.
