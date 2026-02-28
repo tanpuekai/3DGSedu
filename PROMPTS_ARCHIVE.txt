@@ -1,0 +1,57 @@
+Project Prompt Archive
+
+Original Prompts (in order)
+
+1) hi
+
+2) build a 3dgs edu web, interactive, visual, playable and explorable, that shows not the training fitting prcess, but in the inference stage after multiple (say 100,0 which can be set) Gaussian balls were fit of a scene, i can choose a certainn cam pos, pointing direction, focal len, frustrum, near far plane cutoff, .. whatever params that may help me understand, can be set. as soon i choose and click rendering, a corresponding view results is shown in a box below. maybe use a medical scene say human body skeletons as an example. make the whole awesome, highly educational that when ppl play around, they immediately understand 3D GS key tech concept.
+
+3) Access to script at 'file:///Users/peikaichen/Projects/3DGSedu/app.js' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-extension, chrome-untrusted, data, http, https, isolated-app.
+
+4) git init commit
+
+5) add a readme (no excessie emojis, just plain english understandable to a layman) and git commit
+
+6) now can you put the rendering window to the right of the frustrum window, for better side by side experience
+
+7) the rendering should really be instant, without human click so to see the results instantly
+
+8) the num gaussians can be larger
+
+9) edit readme to emphasize that this is for medical scenes edu , also revise web html to say it is for medical education purposes
+
+10) git commit
+
+11) git push to https://github.com/tanpuekai/3DGSedu
+
+12) manually edited readme. 
+in index,html headings, pls saye project conceived by "Peikai Chen@HKU-SZH, executed by AI"
+push again
+
+13) you didn't push the new index.html?
+
+14) these texts "Inference Playground
+Explore medical-style fitted Gaussian scenes from different camera setups. This educational demo skips training and focuses on real-time inference understanding.
+
+Project conceived by Peikai Chen@HKU-SZH, executed by AI." are taking up too much vertical space, such that the real playground windows become vertically shorter narrower.  rearrange the heading part in html so that the top middle part that is now empty can be more utilized for this text info, and have taller playground windows
+
+15) good./
+
+16) now in the two explorer windows, there are some vertical space below : "Drag: orbit observer | Wheel: zoom | Arrow keys: nudge camera yaw/pitch" and "Bone-like dense Gaussians.." i would suggest you to align these texts to the bottom part of those two respective windows, and make the real playgrounds taller to fill in all extra spaces above these lines.
+
+17) git commit and push
+
+18) can you make the bottome "Inference control" panel more vertically compact, coz some text labels flow into second line, adding extra space needs. make it more vertical compact and look great. so that the two explorers and playground above add some extra vertical space. make everything great.
+
+19) git commit and push
+
+20) add the screenshot in my folder to readme as a section below try it out
+
+21) commit and push
+
+22) save all of my prompts in this project to txt file, all summ them up into a nicer prompt below my original one
+
+------------------------------------------------------------
+Nicer Unified Prompt
+
+Build a polished, interactive 3D Gaussian Splatting (3DGS) web demo for medical-scene education (human skeleton style), focused only on inference (not training). The app should let users explore and understand key 3DGS concepts by adjusting Gaussian count (including large values), camera position/orientation, FOV/focal behavior, frustum visibility, and near/far clipping, with immediate live rendering updates (no click required). Layout should be optimized for side-by-side Scene Explorer and Rendered Result panes with maximum usable viewport height, compact and visually clean controls, minimal wasted space, and responsive behavior. Keep educational copy plain and beginner-friendly, explicitly medical-education oriented, and include attribution text: "Project conceived by Peikai Chen@HKU-SZH, executed by AI." Maintain a clear README (no excessive emojis), add a screenshot section below "Try it out," and keep repository workflow updated with git init/commit/push to GitHub.
