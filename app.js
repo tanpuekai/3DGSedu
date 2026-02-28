@@ -404,6 +404,16 @@ function projectedRadiusPx(radius, pointScale, focal, depth, width, height) {
   return clamp(raw, 0.3, safetyMax);
 }
 
+function screenDirectionMetrics(sx, sy, width, height) {
+  const dx = sx - width * 0.5;
+  const dy = sy - height * 0.5;
+  const mag = Math.hypot(dx, dy);
+  const halfMinDim = Math.max(Math.min(width, height) * 0.5, 1e-5);
+  const edgeNorm = clamp(mag / halfMinDim, 0, 1);
+  const angle = mag > 1e-5 ? Math.atan2(dy, dx) : 0;
+  return { dx, dy, mag, edgeNorm, angle };
+}
+
 function drawSceneExplorer() {
   const w = sceneCanvas.width;
   const h = sceneCanvas.height;
@@ -445,10 +455,26 @@ function drawSceneExplorer() {
     const [r, g, b] = p.g.color;
     const alpha = p.isVisible ? 0.8 : 0.14;
 
-    sceneCtx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-    sceneCtx.beginPath();
-    sceneCtx.arc(p.sx, p.sy, rad, 0, Math.PI * 2);
-    sceneCtx.fill();
+    if (p.g.type === "single_demo") {
+      const metrics = screenDirectionMetrics(p.sx, p.sy, w, h);
+      const elong = 1 + metrics.edgeNorm * 0.95;
+      const squeeze = 1 - metrics.edgeNorm * 0.42;
+
+      sceneCtx.save();
+      sceneCtx.translate(p.sx, p.sy);
+      sceneCtx.rotate(metrics.angle);
+      sceneCtx.scale(elong, squeeze);
+      sceneCtx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      sceneCtx.beginPath();
+      sceneCtx.ellipse(0, 0, rad, rad * 0.88, 0, 0, Math.PI * 2);
+      sceneCtx.fill();
+      sceneCtx.restore();
+    } else {
+      sceneCtx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      sceneCtx.beginPath();
+      sceneCtx.arc(p.sx, p.sy, rad, 0, Math.PI * 2);
+      sceneCtx.fill();
+    }
   }
 
   if (controls.showFrustum.checked) {
@@ -505,15 +531,12 @@ function renderInferenceFrame() {
     const hg = Math.min(255, g + 10);
     const hb = Math.min(255, b + 10);
     const baseAlpha = clamp(s.gaussian.alpha * alphaGain * (0.86 + 0.4 / (1 + s.depth * 0.09)), 0.04, 0.8);
-    const eggAsym = 0.33;
-    const eggYScale = 0.9;
-    // Use screen-space offset from image center to avoid sign/axis flips.
-    const dirX = s.sx - w * 0.5;
-    const dirY = s.sy - h * 0.5;
-    const dirMag = Math.hypot(dirX, dirY);
-    const dirAngle = dirMag > 1e-5 ? Math.atan2(dirY, dirX) : 0;
-    const maxSquash = 0.18;
-    const squash = clamp((dirMag / Math.max(Math.min(w, h), 1)) * 0.22, 0, maxSquash);
+    const metrics = screenDirectionMetrics(s.sx, s.sy, w, h);
+    const edgeNorm = metrics.edgeNorm;
+    const eggAsym = 0.33 + edgeNorm * 0.4;
+    const eggYScale = 0.9 - edgeNorm * 0.2;
+    const dirAngle = metrics.angle;
+    const squash = clamp(0.06 + edgeNorm * 0.36, 0, 0.42);
 
     function traceEggPath(scale = 1) {
       const n = 96;
@@ -541,7 +564,7 @@ function renderInferenceFrame() {
     renderCtx.scale(contourScale * stretchX, contourScale * stretchY);
 
     const shell = renderCtx.createLinearGradient(-1.2, 0, 1.2, 0);
-    shell.addColorStop(0.0, `rgba(${r},${g},${b},${baseAlpha * 0.15})`);
+    shell.addColorStop(0.0, `rgba(${r},${g},${b},${baseAlpha * (0.11 + 0.08 * edgeNorm)})`);
     shell.addColorStop(0.35, `rgba(${r},${g},${b},${baseAlpha * 0.42})`);
     shell.addColorStop(1.0, `rgba(${r},${g},${b},${baseAlpha * 0.75})`);
     renderCtx.fillStyle = shell;
