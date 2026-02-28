@@ -1,13 +1,13 @@
-# 3DGS Inference Playground
+# 3DGS Medical Education Playground
 
-This project is a small web app that helps you understand **3D Gaussian Splatting (3DGS)** in a hands-on way.
+This project is a small web app for **medical scene education** that helps you understand **3D Gaussian Splatting (3DGS)** in a hands-on way.
 
 It does **not** show model training.
 It shows what happens **after training**, when many Gaussian points are already fitted to a scene and you render from different camera settings.
 
 ## Who this is for
 
-Anyone curious about 3DGS, including beginners.
+Students, educators, and beginners exploring 3DGS in medical-style scenes.
 You do not need to know advanced graphics math to use this demo.
 
 ## What you can do
@@ -18,7 +18,7 @@ You do not need to know advanced graphics math to use this demo.
 - Adjust lens settings like field of view (FOV)
 - Adjust near and far clipping planes
 - Show or hide the camera frustum in the top view
-- Click a button to render the final inference image in the bottom view
+- See the final inference image update instantly in the right view
 
 ## Why this helps learning
 
@@ -29,11 +29,11 @@ As you change camera and render settings, you can immediately see:
 - How perspective changes with FOV
 - How many splats contribute to the final image
 
-This gives an intuitive understanding of key 3DGS inference concepts.
+This gives an intuitive understanding of key 3DGS inference concepts for medical visualization education.
 
 ## Files
 
-- `index.html`: page structure and control panel
+- `index.html`: page structure and medical-education focused control panel
 - `styles.css`: visual design and layout
 - `app.js`: scene generation, camera math, interaction, and rendering logic
 
@@ -58,8 +58,8 @@ Then open:
 1. Choose a scene preset and Gaussian count.
 2. Set camera position, yaw, and pitch.
 3. Adjust FOV, near plane, and far plane.
-4. Click **Render Inference Frame**.
-5. Compare the top explorer view and bottom rendered result.
+4. The right-side render updates automatically as you change values.
+5. Compare the left explorer view and right rendered result.
 
 ## Notes
 

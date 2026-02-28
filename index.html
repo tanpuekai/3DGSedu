@@ -3,127 +3,121 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3DGS Inference Lab</title>
+    <title>3DGS Medical Education Lab</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="hero">
       <div>
-        <p class="kicker">3D Gaussian Splatting</p>
+        <p class="kicker">3D Gaussian Splatting for Medical Education</p>
         <h1>Inference Playground</h1>
         <p class="subtitle">
-          Explore how fitted Gaussians render from different camera setups.
-          This demo skips training and focuses on the real-time inference stage.
+          Explore medical-style fitted Gaussian scenes from different camera setups.
+          This educational demo skips training and focuses on real-time inference understanding.
         </p>
       </div>
       <div class="hero-stats">
-        <div><span id="statTotal">0</span><label>Total Gaussians</label></div>
+        <div><span id="statTotal">0</span><label>Total Medical Gaussians</label></div>
         <div><span id="statVisible">0</span><label>Visible After Culling</label></div>
-        <div><span id="statRendered">0</span><label>Splats Rendered</label></div>
+        <div><span id="statRendered">0</span><label>Rendered Splats</label></div>
       </div>
     </header>
 
-    <main class="layout">
-      <aside class="panel controls">
-        <h2>Inference Controls</h2>
+    <main class="app-shell">
+      <section class="top-row">
+        <section class="panel viewer">
+          <h2>3D Scene Explorer (Fitted Gaussian Cloud)</h2>
+          <canvas id="sceneCanvas" width="960" height="420"></canvas>
+          <p class="hint">
+            Drag: orbit observer | Wheel: zoom | Arrow keys: nudge camera yaw/pitch
+          </p>
+        </section>
+        <section class="panel result">
+          <h2>Rendered Inference Result</h2>
+          <canvas id="renderCanvas" width="960" height="420"></canvas>
+          <div class="legend">
+            <span><i class="dot bone"></i>Bone-like dense Gaussians</span>
+            <span><i class="dot soft"></i>Soft tissue context</span>
+            <span><i class="dot clip"></i>Culled by near/far/FOV not rendered</span>
+          </div>
+        </section>
+      </section>
 
-        <section>
-          <h3>Scene</h3>
+      <aside class="panel controls">
+        <div class="controls-bar">
+          <h2>Inference Controls</h2>
+          <div class="actions">
+            <button id="orbitBtn" class="btn ghost">Auto Orbit: Off</button>
+            <button id="renderBtn" class="btn primary">Render Inference Frame</button>
+          </div>
+        </div>
+
+        <div class="controls-grid">
+          <section>
+            <h3>Scene</h3>
           <label>Gaussian count
-            <input id="gaussianCount" type="range" min="200" max="5000" step="100" value="1000" />
+            <input id="gaussianCount" type="range" min="200" max="50000" step="200" value="1000" />
             <span id="gaussianCountLabel">1000</span>
           </label>
-          <label>Medical preset
-            <select id="scenePreset">
-              <option value="skeleton">Skeleton Torso</option>
-              <option value="spine">Spine Focus</option>
-              <option value="upper">Upper Body</option>
-            </select>
-          </label>
-          <button id="regenBtn" class="btn ghost">Regenerate Fitted Gaussians</button>
-        </section>
+            <label>Medical preset
+              <select id="scenePreset">
+                <option value="skeleton">Skeleton Torso</option>
+                <option value="spine">Spine Focus</option>
+                <option value="upper">Upper Body</option>
+              </select>
+            </label>
+            <button id="regenBtn" class="btn ghost">Regenerate Fitted Gaussians</button>
+          </section>
 
-        <section>
-          <h3>Camera Pose</h3>
-          <label>X <input id="camX" type="number" step="0.1" value="0" /></label>
-          <label>Y <input id="camY" type="number" step="0.1" value="0.4" /></label>
-          <label>Z <input id="camZ" type="number" step="0.1" value="4.8" /></label>
-          <label>Yaw (deg) <input id="camYaw" type="number" step="1" value="180" /></label>
-          <label>Pitch (deg) <input id="camPitch" type="number" step="1" value="-7" /></label>
-        </section>
+          <section>
+            <h3>Camera Pose</h3>
+            <label>X <input id="camX" type="number" step="0.1" value="0" /></label>
+            <label>Y <input id="camY" type="number" step="0.1" value="0.4" /></label>
+            <label>Z <input id="camZ" type="number" step="0.1" value="4.8" /></label>
+            <label>Yaw (deg) <input id="camYaw" type="number" step="1" value="180" /></label>
+            <label>Pitch (deg) <input id="camPitch" type="number" step="1" value="-7" /></label>
+          </section>
 
-        <section>
-          <h3>Lens & Frustum</h3>
-          <label>FOV (deg)
-            <input id="fov" type="range" min="20" max="100" step="1" value="55" />
-            <span id="fovLabel">55</span>
-          </label>
-          <label>Near plane
-            <input id="near" type="range" min="0.1" max="3" step="0.1" value="0.5" />
-            <span id="nearLabel">0.5</span>
-          </label>
-          <label>Far plane
-            <input id="far" type="range" min="2" max="20" step="0.5" value="12" />
-            <span id="farLabel">12</span>
-          </label>
-          <label>
-            <input id="showFrustum" type="checkbox" checked /> Show frustum in scene view
-          </label>
-        </section>
+          <section>
+            <h3>Lens & Frustum</h3>
+            <label>FOV (deg)
+              <input id="fov" type="range" min="20" max="100" step="1" value="55" />
+              <span id="fovLabel">55</span>
+            </label>
+            <label>Near plane
+              <input id="near" type="range" min="0.1" max="3" step="0.1" value="0.5" />
+              <span id="nearLabel">0.5</span>
+            </label>
+            <label>Far plane
+              <input id="far" type="range" min="2" max="20" step="0.5" value="12" />
+              <span id="farLabel">12</span>
+            </label>
+            <label class="check-row">
+              <input id="showFrustum" type="checkbox" checked /> Show frustum in scene view
+            </label>
+          </section>
 
-        <section>
-          <h3>Splat Styling</h3>
-          <label>Point size
-            <input id="pointScale" type="range" min="0.6" max="2.4" step="0.1" value="1.2" />
-            <span id="pointScaleLabel">1.2</span>
-          </label>
-          <label>Alpha gain
-            <input id="alphaGain" type="range" min="0.1" max="2.5" step="0.1" value="1.2" />
-            <span id="alphaGainLabel">1.2</span>
-          </label>
-          <label>Background
-            <select id="bgMode">
-              <option value="black">Black</option>
-              <option value="xray">X-ray Blue</option>
-              <option value="light">Light</option>
-            </select>
-          </label>
-        </section>
-
-        <div class="actions">
-          <button id="orbitBtn" class="btn ghost">Auto Orbit: Off</button>
-          <button id="renderBtn" class="btn primary">Render Inference Frame</button>
+          <section>
+            <h3>Splat Styling</h3>
+            <label>Point size
+              <input id="pointScale" type="range" min="0.6" max="2.4" step="0.1" value="1.2" />
+              <span id="pointScaleLabel">1.2</span>
+            </label>
+            <label>Alpha gain
+              <input id="alphaGain" type="range" min="0.1" max="2.5" step="0.1" value="1.2" />
+              <span id="alphaGainLabel">1.2</span>
+            </label>
+            <label>Background
+              <select id="bgMode">
+                <option value="black">Black</option>
+                <option value="xray">X-ray Blue</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+          </section>
         </div>
       </aside>
-
-      <section class="panel viewer">
-        <h2>3D Scene Explorer (Fitted Gaussian Cloud)</h2>
-        <canvas id="sceneCanvas" width="960" height="520"></canvas>
-        <p class="hint">
-          Drag: orbit camera pose hint | Wheel: zoom | Arrow keys: nudge yaw/pitch
-        </p>
-      </section>
     </main>
-
-    <section class="panel result">
-      <h2>Rendered Inference Result</h2>
-      <canvas id="renderCanvas" width="960" height="360"></canvas>
-      <div class="legend">
-        <span><i class="dot bone"></i>Bone-like dense Gaussians</span>
-        <span><i class="dot soft"></i>Soft tissue context</span>
-        <span><i class="dot clip"></i>Culled by near/far/FOV not rendered</span>
-      </div>
-    </section>
-
-    <section class="panel explain">
-      <h2>Why This Teaches 3DGS</h2>
-      <ol>
-        <li>Gaussians are already fitted. You only change camera and render parameters at inference.</li>
-        <li>Near/far plane and frustum immediately change visible splats, showing view-dependent culling.</li>
-        <li>FOV changes projected footprint size, changing apparent density and detail.</li>
-        <li>Alpha compositing approximates how many translucent Gaussians blend into final pixels.</li>
-      </ol>
-    </section>
 
     <script src="app.js"></script>
   </body>

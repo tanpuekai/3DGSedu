@@ -39,6 +39,7 @@ const state = {
   gaussians: [],
   autoOrbit: false,
   renderedCount: 0,
+  needsRender: true,
   observer: {
     yaw: -1.0,
     pitch: 0.35,
@@ -49,6 +50,10 @@ const state = {
     lastY: 0,
   },
 };
+
+function requestInferenceRender() {
+  state.needsRender = true;
+}
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -153,6 +158,22 @@ function projectPoint(point, cam, width, height, fovDeg) {
   const sy = height * 0.5 - (cy * focal) / cz;
 
   return { sx, sy, depth: cz, focal, cx, cy };
+}
+
+function projectPointClamped(point, cam, width, height, fovDeg, pad = 18) {
+  const rel = sub(point, cam.pos);
+  const cx = dot(rel, cam.right);
+  const cy = dot(rel, cam.up);
+  const cz = dot(rel, cam.forward);
+
+  const fov = (fovDeg * Math.PI) / 180;
+  const focal = height * 0.5 / Math.tan(fov * 0.5);
+  const safeDepth = Math.max(cz, 0.08);
+
+  const sx = clamp(width * 0.5 + (cx * focal) / safeDepth, -pad, width + pad);
+  const sy = clamp(height * 0.5 - (cy * focal) / safeDepth, -pad, height + pad);
+
+  return { sx, sy, depth: cz };
 }
 
 function rand(seedObj) {
@@ -344,22 +365,19 @@ function drawFrustum(ctx, obsCam, inferCam, width, height, fovDeg, near, far) {
   ctx.lineWidth = 1.3;
 
   for (const [a, b] of lines) {
-    const p1 = projectPoint(corners[a], obsCam, width, height, 55);
-    const p2 = projectPoint(corners[b], obsCam, width, height, 55);
-    if (!p1 || !p2) continue;
+    const p1 = projectPointClamped(corners[a], obsCam, width, height, 55);
+    const p2 = projectPointClamped(corners[b], obsCam, width, height, 55);
     ctx.beginPath();
     ctx.moveTo(p1.sx, p1.sy);
     ctx.lineTo(p2.sx, p2.sy);
     ctx.stroke();
   }
 
-  const camDot = projectPoint(inferCam.pos, obsCam, width, height, 55);
-  if (camDot) {
-    ctx.fillStyle = "#ffb16b";
-    ctx.beginPath();
-    ctx.arc(camDot.sx, camDot.sy, 4.6, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  const camDot = projectPointClamped(inferCam.pos, obsCam, width, height, 55);
+  ctx.fillStyle = "#ffb16b";
+  ctx.beginPath();
+  ctx.arc(camDot.sx, camDot.sy, 4.6, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 }
@@ -482,6 +500,7 @@ function regenerateGaussians() {
   const preset = controls.scenePreset.value;
   state.gaussians = generateSkeletonGaussians(count, preset);
   state.renderedCount = 0;
+  requestInferenceRender();
 }
 
 function bindEvents() {
@@ -500,33 +519,51 @@ function bindEvents() {
         controls.far.value = (parseFloat(controls.near.value) + 0.5).toFixed(1);
       }
       updateLabels();
+      requestInferenceRender();
     });
   }
 
   controls.regenBtn.addEventListener("click", () => {
     regenerateGaussians();
-    renderInferenceFrame();
   });
 
   controls.renderBtn.addEventListener("click", () => {
+    requestInferenceRender();
     renderInferenceFrame();
   });
 
   controls.scenePreset.addEventListener("change", () => {
     regenerateGaussians();
-    renderInferenceFrame();
+    requestInferenceRender();
   });
 
   controls.orbitBtn.addEventListener("click", () => {
     state.autoOrbit = !state.autoOrbit;
     controls.orbitBtn.textContent = `Auto Orbit: ${state.autoOrbit ? "On" : "Off"}`;
+    requestInferenceRender();
   });
+
+  const cameraInputs = [
+    controls.camX,
+    controls.camY,
+    controls.camZ,
+    controls.camYaw,
+    controls.camPitch,
+  ];
+  for (const input of cameraInputs) {
+    input.addEventListener("input", requestInferenceRender);
+    input.addEventListener("change", requestInferenceRender);
+  }
+
+  controls.bgMode.addEventListener("change", requestInferenceRender);
+  controls.showFrustum.addEventListener("change", requestInferenceRender);
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") controls.camYaw.value = `${parseFloat(controls.camYaw.value) - 2}`;
     if (e.key === "ArrowRight") controls.camYaw.value = `${parseFloat(controls.camYaw.value) + 2}`;
     if (e.key === "ArrowUp") controls.camPitch.value = `${parseFloat(controls.camPitch.value) + 2}`;
     if (e.key === "ArrowDown") controls.camPitch.value = `${parseFloat(controls.camPitch.value) - 2}`;
+    if (e.key.startsWith("Arrow")) requestInferenceRender();
   });
 
   sceneCanvas.addEventListener("mousedown", (e) => {
@@ -557,6 +594,7 @@ function bindEvents() {
 }
 
 function tick() {
+  let autoOrbitUpdated = false;
   if (state.autoOrbit) {
     const yaw = parseFloat(controls.camYaw.value) + 0.25;
     const radius = Math.max(2.5, Math.hypot(parseFloat(controls.camX.value), parseFloat(controls.camZ.value)));
@@ -567,6 +605,12 @@ function tick() {
     controls.camX.value = (Math.sin(yawRad) * radius).toFixed(2);
     controls.camZ.value = (Math.cos(yawRad) * radius).toFixed(2);
     controls.camY.value = y.toFixed(2);
+    autoOrbitUpdated = true;
+  }
+
+  if (autoOrbitUpdated || state.needsRender) {
+    renderInferenceFrame();
+    state.needsRender = false;
   }
 
   drawSceneExplorer();
@@ -577,7 +621,6 @@ function init() {
   updateLabels();
   regenerateGaussians();
   bindEvents();
-  renderInferenceFrame();
   tick();
 }
 
